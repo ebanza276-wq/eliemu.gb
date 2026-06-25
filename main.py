@@ -20,4 +20,4 @@ def main(page: ft.Page):
         bouton
     )
 
-ft.app(target=main, view="web_browser")
+ft.app(target=main)
