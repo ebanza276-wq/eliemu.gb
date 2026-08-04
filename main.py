@@ -482,5 +482,4 @@ def main(page: ft.Page):
     page.add(content_area)
 
 
-if __name__ == "__main__":
-    ft.app(target=main)
+ft.app(target=main)
