@@ -1,5 +1,5 @@
+import asyncio
 import flet as ft
-
 # --- Palette (rust / paper / sage / mustard) ---
 RUST = "#E85D42"
 RUST_DARK = "#C94A32"
@@ -128,7 +128,8 @@ def main(page: ft.Page):
     page.fonts = {
         "Fraunces": "https://raw.githubusercontent.com/googlefonts/fraunces/main/fonts/variable/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
     }
-    state = {"query": "", "categorie": "Tout"}
+    # state["selected"] garde l'annonce actuellement ouverte en détail
+    state = {"query": "", "categorie": "Tout", "selected": None}
     favorites = set()
 
     # ---------- Header ----------
@@ -195,12 +196,6 @@ def main(page: ft.Page):
             ],
         ),
     )
-
-    # ---------- Category bar ----------
-    # NOTE: category_row est reconstruite à chaque changement de catégorie
-    # (via build_category_row) afin que la puce sélectionnée reste en
-    # surbrillance. On ne garde donc plus qu'un Container "coquille" fixe
-    # dont on remplace le contenu.
 
     def filter_by_category(name):
         state["categorie"] = name
@@ -277,7 +272,12 @@ def main(page: ft.Page):
         ),
     )
 
-    # ---------- Listing card ----------
+    def go_to_detail(item):
+        # Mémorise l'annonce cliquée AVANT de changer de route, sinon
+        # la vue "/details" ne sait pas quelle annonce afficher.
+        state["selected"] = item
+        asyncio.create_task(page.push_route("/details"))
+
     def listing_card(item):
         is_fav = ft.Ref[ft.IconButton]()
 
@@ -300,7 +300,7 @@ def main(page: ft.Page):
             bgcolor=CARD_BG,
             border=ft.Border.all(1, BORDER),
             border_radius=14,
-            on_click=lambda e, a=item: show_detail(a),
+            on_click=lambda e, it=item: go_to_detail(it),
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             content=ft.Column(
                 [
@@ -353,7 +353,6 @@ def main(page: ft.Page):
             ),
         )
 
-    # ---------- Grille (liste) ----------
     grid = ft.GridView(
         expand=True,
         runs_count=0,
@@ -363,14 +362,6 @@ def main(page: ft.Page):
         run_spacing=12,
         padding=ft.Padding.symmetric(horizontal=16, vertical=10),
         controls=[listing_card(a) for a in ANNONCES],
-    )
-
-    # Conteneur qui bascule entre la liste et le détail
-    content_area = ft.Column(
-        [header, hero, category_row, ad_banner, grid, ft.Container(height=20)],
-        spacing=0,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
     )
 
     def show_list(query=None, category=None):
@@ -394,92 +385,121 @@ def main(page: ft.Page):
         content_area.controls = [header, hero, category_row, ad_banner, grid, ft.Container(height=20)]
         content_area.update()
 
-    def show_detail(annonce):
-        content_area.controls = [
-            ft.Container(
-                content=ft.Row(
-                    [
-                        ft.IconButton(
-                            icon=ft.Icons.ARROW_BACK,
-                            on_click=lambda e: show_list(),
-                        ),
-                        ft.Text("Retour aux annonces", size=14, color=MUTED),
-                    ],
-                ),
-                padding=ft.Padding.symmetric(horizontal=16, vertical=8),
-                bgcolor=CARD_BG,
-                border=ft.Border.only(bottom=ft.BorderSide(1, BORDER)),
-            ),
-            ft.Container(
-                content=ft.ResponsiveRow(
-                    [
-                        ft.Container(
-                            content=ft.Image(
-                                src=annonce["img"],
-                                fit="cover",
-                                border_radius=12,
-                                height=340,
-                                width=float("inf"),
+    content_area = ft.Column(
+        [header, hero, category_row, ad_banner, grid, ft.Container(height=20)],
+        spacing=0,
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+    )
+
+    def build_detail_view(annonce):
+        """Construit et RENVOIE le contenu de la page détail (ne modifie
+        plus content_area directement, pour pouvoir servir de contrôle
+        dans la ft.View('/details'))."""
+        return ft.Column(
+            [
+                ft.Container(
+                    content=ft.ResponsiveRow(
+                        [
+                            ft.Container(
+                                content=ft.Image(
+                                    src=annonce["img"],
+                                    fit="cover",
+                                    border_radius=12,
+                                    height=340,
+                                ),
+                                col={"sm": 12, "md": 7},
                             ),
-                            col={"sm": 12, "md": 7},
-                        ),
-                        ft.Container(
-                            content=ft.Column(
-                                [
-                                    ft.Text(
-                                        annonce["price"],
-                                        size=28,
-                                        weight=ft.FontWeight.BOLD,
-                                        color=RUST_DARK,
-                                    ),
-                                    ft.Text(annonce["title"], size=20, weight=ft.FontWeight.W_600),
-                                    ft.Row(
-                                        [
-                                            ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=16, color=MUTED),
-                                            ft.Text(annonce["loc"], color=MUTED),
-                                        ],
-                                        spacing=4,
-                                    ),
-                                    ft.Row(
-                                        [
-                                            ft.Container(
-                                                content=ft.Text(annonce["categorie"], size=12, color=RUST_DARK),
-                                                bgcolor="#F6E4DC",
-                                                padding=ft.Padding.symmetric(horizontal=10, vertical=4),
-                                                border_radius=20,
-                                            ),
-                                            ft.Text(annonce["date"], size=12, color=MUTED),
-                                        ],
-                                        spacing=10,
-                                    ),
-                                    ft.Divider(color=BORDER),
-                                    ft.Text("Description", weight=ft.FontWeight.W_600),
-                                    ft.Text(annonce["description"], color="#5A5A5A"),
-                                    ft.Divider(color=BORDER),
-                                    ft.ElevatedButton(
-                                        "Contacter le vendeur",
-                                        icon=ft.Icons.CHAT_BUBBLE_OUTLINE,
-                                        style=ft.ButtonStyle(
-                                            bgcolor=RUST,
-                                            color="#FFFFFF",
-                                            shape=ft.RoundedRectangleBorder(radius=8),
-                                            padding=ft.Padding.symmetric(horizontal=20, vertical=14),
+                            ft.Container(
+                                content=ft.Column(
+                                    [
+                                        ft.Text(
+                                            annonce["price"],
+                                            size=28,
+                                            weight=ft.FontWeight.BOLD,
+                                            color=RUST_DARK,
                                         ),
-                                    ),
-                                ],
-                                spacing=10,
+                                        ft.Text(annonce["title"], size=20, weight=ft.FontWeight.W_600),
+                                        ft.Row(
+                                            [
+                                                ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=16, color=MUTED),
+                                                ft.Text(annonce["loc"], color=MUTED),
+                                            ],
+                                            spacing=4,
+                                        ),
+                                        ft.Row(
+                                            [
+                                                ft.Container(
+                                                    content=ft.Text(annonce["categorie"], size=12, color=RUST_DARK),
+                                                    bgcolor="#F6E4DC",
+                                                    padding=ft.Padding.symmetric(horizontal=10, vertical=4),
+                                                    border_radius=20,
+                                                ),
+                                                ft.Text(annonce["date"], size=12, color=MUTED),
+                                            ],
+                                            spacing=10,
+                                        ),
+                                        ft.Divider(color=BORDER),
+                                        ft.Text("Description", weight=ft.FontWeight.W_600),
+                                        ft.Text(annonce["description"], color="#5A5A5A"),
+                                        ft.Divider(color=BORDER),
+                                        ft.ElevatedButton(
+                                            "Contacter le vendeur",
+                                            icon=ft.Icons.CHAT_BUBBLE_OUTLINE,
+                                            style=ft.ButtonStyle(
+                                                bgcolor=RUST,
+                                                color="#FFFFFF",
+                                                shape=ft.RoundedRectangleBorder(radius=8),
+                                                padding=ft.Padding.symmetric(horizontal=20, vertical=14),
+                                            ),
+                                        ),
+                                    ],
+                                    spacing=10,
+                                ),
+                                col={"sm": 12, "md": 5},
+                                padding=ft.Padding.only(left=16),
                             ),
-                            col={"sm": 12, "md": 5},
-                            padding=ft.Padding.only(left=16),
-                        ),
-                    ],
+                        ],
+                    ),
+                    padding=24,
                 ),
-                padding=24,
-            ),
-        ]
-        content_area.update()
+            ],
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+        )
 
-    page.add(content_area)
+    def route_change(e=None):
+        page.views.clear()
+        page.views.append(
+            ft.View(
+                route="/",
+                controls=[content_area],
+            )
+        )
+        if page.route == "/details":
+            # state["selected"] est renseigné par go_to_detail() au clic
+            # sur une carte ; si jamais on arrive ici sans sélection
+            # (ex. accès direct à l'URL), on retombe sur la première annonce.
+            annonce = state["selected"] or ANNONCES[0]
+            page.views.append(
+                ft.View(
+                    route="/details",
+                    controls=[build_detail_view(annonce)],
+                )
+            )
+        page.update()
+
+    async def view_pop(e):
+        if len(page.views) > 1:
+            page.views.pop()
+            top_view = page.views[-1]
+            await page.push_route(top_view.route)
+
+    page.on_route_change = route_change
+    page.on_view_pop = view_pop
+
+    # Appel direct, PAS via page.go(), pour forcer l'affichage initial
+    route_change()
 
 
-ft.app(target=main)
+ft.run(main, view=ft.AppView.WEB_BROWSER)
