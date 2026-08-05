@@ -120,6 +120,7 @@ ANNONCES = [
 def main(page: ft.Page):
     page.title = "Annonces"
     page.bgcolor = PAPER
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 0
     page.window.width = 390
     page.window.height = 844
@@ -474,6 +475,7 @@ def main(page: ft.Page):
             ft.View(
                 route="/",
                 controls=[content_area],
+                bgcolor=PAPER,
             )
         )
         if page.route == "/details":
@@ -485,6 +487,7 @@ def main(page: ft.Page):
                 ft.View(
                     route="/details",
                     controls=[build_detail_view(annonce)],
+                    bgcolor=PAPER,
                 )
             )
         page.update()
@@ -500,6 +503,5 @@ def main(page: ft.Page):
 
     # Appel direct, PAS via page.go(), pour forcer l'affichage initial
     route_change()
-
 
 ft.run(main, view=ft.AppView.WEB_BROWSER)
