@@ -22,6 +22,9 @@ CATEGORIES = [
     ("Services", ft.Icons.MISCELLANEOUS_SERVICES_OUTLINED),
 ]
 
+# Catégories utilisables dans le formulaire de dépôt (on exclut "Tout")
+FORM_CATEGORIES = [c[0] for c in CATEGORIES if c[0] != "Tout"]
+
 # Un seul schéma de données, cohérent entre la liste et le détail
 ANNONCES = [
     {
@@ -147,6 +150,9 @@ def main(page: ft.Page):
         on_submit=lambda e: show_list(search_field.value),
     )
 
+    def go_to_publier(e=None):
+        asyncio.create_task(page.push_route("/publier"))
+
     header = ft.Container(
         padding=ft.Padding.symmetric(horizontal=20, vertical=12),
         bgcolor=CARD_BG,
@@ -240,6 +246,23 @@ def main(page: ft.Page):
         padding=ft.Padding.symmetric(horizontal=12, vertical=14),
         bgcolor=CARD_BG,
         content=build_category_row(),
+    )
+
+    # ---------- Bouton "Déposer une annonce" ----------
+    deposer_banner = ft.Container(
+        margin=ft.Padding.symmetric(horizontal=16, vertical=6),
+        content=ft.ElevatedButton(
+            "Déposer une annonce",
+            icon=ft.Icons.ADD_CIRCLE_OUTLINE,
+            style=ft.ButtonStyle(
+                bgcolor=RUST,
+                color="#FFFFFF",
+                shape=ft.RoundedRectangleBorder(radius=10),
+                padding=ft.Padding.symmetric(horizontal=20, vertical=16),
+            ),
+            width=float("inf"),
+            on_click=go_to_publier,
+        ),
     )
 
     # ---------- Ad banner ----------
@@ -383,11 +406,11 @@ def main(page: ft.Page):
         # On régénère la barre de catégories pour que la puce sélectionnée
         # reflète bien state["categorie"].
         category_row.content = build_category_row()
-        content_area.controls = [header, hero, category_row, ad_banner, grid, ft.Container(height=20)]
+        content_area.controls = [header, hero, category_row, deposer_banner, ad_banner, grid, ft.Container(height=20)]
         content_area.update()
 
     content_area = ft.Column(
-        [header, hero, category_row, ad_banner, grid, ft.Container(height=20)],
+        [header, hero, category_row, deposer_banner, ad_banner, grid, ft.Container(height=20)],
         spacing=0,
         scroll=ft.ScrollMode.AUTO,
         expand=True,
@@ -469,6 +492,218 @@ def main(page: ft.Page):
             expand=True,
         )
 
+    # ---------- Formulaire "Déposer une annonce" ----------
+    def build_publier_view():
+        title_field = ft.TextField(label="Titre de l'annonce", border_radius=10, bgcolor=CARD_BG)
+        price_field = ft.TextField(
+            label="Prix (ex: 200 USD ou Prix sur demande)", border_radius=10, bgcolor=CARD_BG
+        )
+        loc_field = ft.TextField(
+            label="Localisation", value="Kinshasa, RDC", border_radius=10, bgcolor=CARD_BG
+        )
+        desc_field = ft.TextField(
+            label="Description",
+            multiline=True,
+            min_lines=4,
+            max_lines=8,
+            border_radius=10,
+            bgcolor=CARD_BG,
+        )
+        category_dropdown = ft.Dropdown(
+            label="Catégorie",
+            options=[ft.dropdown.Option(c) for c in FORM_CATEGORIES],
+            value=FORM_CATEGORIES[0],
+            border_radius=10,
+            bgcolor=CARD_BG,
+        )
+        error_text = ft.Text("", color=RUST, size=12)
+
+        # ---------- Aperçu photo piloté par l'URL ----------
+        placeholder_photo = ft.Column(
+            [
+                ft.Icon(ft.Icons.ADD_PHOTO_ALTERNATE_OUTLINED, size=40, color=MUTED),
+                ft.Text("Colle une URL d'image ci-dessous pour l'aperçu", size=12, color=MUTED),
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=6,
+        )
+        photo_box = ft.Container(
+            height=180,
+            border_radius=14,
+            bgcolor="#F3EEE9",
+            border=ft.Border.all(1, BORDER),
+            alignment=ft.Alignment.CENTER,
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+            content=placeholder_photo,
+        )
+
+        def update_preview(e):
+            url = (img_field.value or "").strip()
+            if url:
+                photo_box.content = ft.Image(src=url, height=180, width=1000, fit="cover")
+            else:
+                photo_box.content = placeholder_photo
+            photo_box.update()
+
+        img_field = ft.TextField(
+            label="URL de l'image (optionnel)",
+            border_radius=10,
+            bgcolor=CARD_BG,
+            on_change=update_preview,
+        )
+
+        def section_card(titre, controls_list):
+            return ft.Container(
+                padding=18,
+                border_radius=16,
+                bgcolor=CARD_BG,
+                border=ft.Border.all(1, BORDER),
+                content=ft.Column(
+                    [ft.Text(titre, size=15, weight=ft.FontWeight.BOLD, color=INK), *controls_list],
+                    spacing=12,
+                ),
+            )
+
+        def annuler(e):
+            asyncio.create_task(page.push_route("/"))
+
+        def publier(e):
+            manquants = []
+            if not (title_field.value or "").strip():
+                manquants.append("le titre")
+            if not (price_field.value or "").strip():
+                manquants.append("le prix")
+            if not (desc_field.value or "").strip():
+                manquants.append("la description")
+
+            if manquants:
+                error_text.value = "Merci de renseigner : " + ", ".join(manquants)
+                error_text.update()
+                return
+
+            error_text.value = ""
+            nouvelle_annonce = {
+                "title": title_field.value.strip(),
+                "price": price_field.value.strip(),
+                "time": "à l'instant",
+                "loc": (loc_field.value or "Kinshasa, RDC").strip(),
+                "img": (img_field.value or "").strip()
+                or f"https://picsum.photos/seed/{len(ANNONCES)}/400/300",
+                "categorie": category_dropdown.value,
+                "date": "Aujourd'hui",
+                "description": desc_field.value.strip(),
+            }
+            ANNONCES.insert(0, nouvelle_annonce)
+            show_list()
+            asyncio.create_task(page.push_route("/"))
+
+        # Largeur max du formulaire : plein écran sur mobile, colonne
+        # centrée et resserrée sur des écrans plus larges (desktop/web).
+        form_width = min(page.width or 480, 480)
+
+        form_header = ft.Container(
+            padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+            bgcolor=CARD_BG,
+            alignment=ft.Alignment.CENTER,
+            content=ft.Container(
+                width=form_width,
+                content=ft.Row(
+                    [
+                        ft.IconButton(ft.Icons.ARROW_BACK, icon_color=INK, on_click=annuler),
+                        ft.Container(
+                            content=ft.Text(
+                                "Déposer une annonce",
+                                size=18,
+                                weight=ft.FontWeight.W_600,
+                                font_family="Fraunces",
+                                color=INK,
+                                text_align=ft.TextAlign.CENTER,
+                            ),
+                            expand=True,
+                            alignment=ft.Alignment.CENTER,
+                        ),
+                        # espace fantôme pour équilibrer le bouton retour
+                        # et garder le titre visuellement centré
+                        ft.Container(width=48),
+                    ],
+                    spacing=6,
+                ),
+            ),
+        )
+
+        body = ft.Column(
+            [
+                ft.Container(
+                    photo_box, margin=ft.Margin.symmetric(horizontal=16, vertical=8)
+                ),
+                ft.Container(
+                    section_card(
+                        "Informations générales",
+                        [title_field, price_field, category_dropdown, loc_field, img_field],
+                    ),
+                    margin=ft.Margin.symmetric(horizontal=16, vertical=8),
+                ),
+                ft.Container(
+                    section_card("Description", [desc_field]),
+                    margin=ft.Margin.symmetric(horizontal=16, vertical=8),
+                ),
+                ft.Container(error_text, margin=ft.Margin.symmetric(horizontal=16)),
+                ft.Container(
+                    ft.ElevatedButton(
+                        "Publier l'annonce",
+                        icon=ft.Icons.PUBLISH,
+                        style=ft.ButtonStyle(
+                            bgcolor=RUST,
+                            color="#FFFFFF",
+                            shape=ft.RoundedRectangleBorder(radius=10),
+                            padding=ft.Padding.symmetric(horizontal=20, vertical=16),
+                        ),
+                        width=float("inf"),
+                        on_click=publier,
+                    ),
+                    margin=ft.Margin.symmetric(horizontal=16, vertical=6),
+                ),
+                ft.Container(
+                    ft.OutlinedButton(
+                        "Annuler",
+                        style=ft.ButtonStyle(
+                            color=INK, shape=ft.RoundedRectangleBorder(radius=10)
+                        ),
+                        width=float("inf"),
+                        on_click=annuler,
+                    ),
+                    margin=ft.Padding.symmetric(horizontal=16),
+                ),
+                ft.Container(height=24),
+            ],
+            spacing=0,
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+        )
+
+        centered_body = ft.Container(
+            content=body,
+            width=form_width,
+            expand=True,
+        )
+
+        return ft.Container(
+            expand=True,
+            bgcolor=PAPER,
+            content=ft.Column(
+                [
+                    form_header,
+                    ft.Container(
+                        content=centered_body,
+                        alignment=ft.Alignment.TOP_CENTER,
+                        expand=True,
+                    ),
+                ],
+                spacing=0,
+                expand=True,
+            ),
+        )
+
     def route_change(e=None):
         page.views.clear()
         page.views.append(
@@ -490,6 +725,14 @@ def main(page: ft.Page):
                     bgcolor=PAPER,
                 )
             )
+        elif page.route == "/publier":
+            page.views.append(
+                ft.View(
+                    route="/publier",
+                    controls=[build_publier_view()],
+                    bgcolor=PAPER,
+                )
+            )
         page.update()
 
     async def view_pop(e):
@@ -504,4 +747,4 @@ def main(page: ft.Page):
     # Appel direct, PAS via page.go(), pour forcer l'affichage initial
     route_change()
 
-ft.run(main, view=ft.AppView.WEB_BROWSER)
+ft.run(main)#, view=ft.AppView.WEB_BROWSER)
