@@ -184,7 +184,7 @@ def main(page: ft.Page):
         #publish_btn.content.controls[1].visible = wide
 
     # Mise à jour du ratio des cartes
-        grid.child_aspect_ratio = 0.25 if wide else 0.26
+        #grid.child_aspect_ratio = 0.25 if wide else 0.26
         page.update()
 
     page.on_resize = on_resize
@@ -431,7 +431,7 @@ def main(page: ft.Page):
         ref=grid_ref,
         expand=False,
         max_extent=232,
-        #child_aspect_ratio=0.25 if page.width >= 700 else 0.56,
+        child_aspect_ratio=0.72,
         spacing=14,
         run_spacing=14,
         controls=[listing_card(a) for a in ANNONCES],
