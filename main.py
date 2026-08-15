@@ -107,7 +107,7 @@ def main(page: ft.Page):
     page.title = "Responsive Header"
     page.bgcolor = BG
     page.padding = 0
-    page.window.width = 390
+    page.window.width = 360
     page.window.height = 844
     page.bgcolor = PAPER
     state = {"query": "", "categorie": "Tout", "selected": None}
@@ -181,33 +181,30 @@ def main(page: ft.Page):
     # État initial
     titre.visible = (page.width or 800) >= 700
     publish_btn.visible = (page.width or 800) >= 700
-    header = ft.Container(
-    padding=20,
-    bgcolor=CARD_BG,
-    border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
-    alignment=ft.Alignment.CENTER,
-    content=ft.Container(
-        width=1000,
-        content=ft.Row(
-            [
-                logo,
-
-                ft.Container(
-                    expand=True,
-                    margin=ft.Margin.symmetric(horizontal=1),
-                    content=search_bar,
-                ),
-
-                favoris_btn,
-                profil_btn,
-                publish_btn,
-            ],
-            alignment=ft.MainAxisAlignment.START,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=12,
-        ),
-    ),
-)
+    header = ft.Container( 
+        padding=20, 
+        bgcolor=CARD_BG, 
+        border=ft.Border(
+            bottom=ft.BorderSide(1, BORDER)), 
+            alignment=ft.Alignment.CENTER, 
+            content=ft.Container( 
+                width=1000, 
+                content=ft.Row( 
+                    [ logo, 
+                     ft.Container( 
+                        expand=True, 
+                        margin=ft.Margin.symmetric(horizontal=1), 
+                        content=search_bar, ), 
+                        favoris_btn, 
+                        profil_btn, 
+                        publish_btn, 
+                    ], 
+                    alignment=ft.MainAxisAlignment.START, 
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER, 
+                    spacing=12, 
+                    ), 
+                    ), 
+                    )
     ad_banner = ft.Container(
     alignment=ft.Alignment.CENTER,
     content=ft.Container(
@@ -361,7 +358,7 @@ def main(page: ft.Page):
     grid = ft.GridView(
     expand=False,
     max_extent=230,
-    child_aspect_ratio=0.72,
+    child_aspect_ratio=0.67,#0.72,
     spacing=12,
     run_spacing=12,
     controls=[listing_card(a) for a in ANNONCES],
@@ -471,6 +468,7 @@ def main(page: ft.Page):
         page.views.append(
             ft.View(
                 route="/",
+                padding = 0,
                 controls=[content_area],
                 bgcolor=PAPER,
                 )
@@ -480,6 +478,7 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(
                     route="/details",
+                    padding = 0,
                     controls=[build_detail_view(annonce)],
                     bgcolor=PAPER,
                     )
