@@ -184,7 +184,7 @@ def main(page: ft.Page):
         #publish_btn.content.controls[1].visible = wide
 
     # Mise à jour du ratio des cartes
-        grid.child_aspect_ratio = 0.25 if wide else 0.56
+        grid.child_aspect_ratio = 0.25 if wide else 0.26
         page.update()
 
     page.on_resize = on_resize
