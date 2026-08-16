@@ -108,7 +108,11 @@ def main(page: ft.Page):
     page.fonts = {
         "Fraunces": "https://raw.githubusercontent.com/google/fonts/main/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
     }
-
+    breakpoints = {
+            "phone": 0,
+            "tablet": 240,
+            "desktop": 800,
+        }
     state = {"query": "", "categorie": "Tout", "selected": None}
     favorites = set()
     grid_ref = ft.Ref[ft.GridView]()
@@ -184,7 +188,7 @@ def main(page: ft.Page):
         #publish_btn.content.controls[1].visible = wide
 
     # Mise à jour du ratio des cartes
-        #grid.child_aspect_ratio = 0.25 if wide else 0.26
+        #grid.child_aspect_ratio = 0.25 if wide else 0.56
         page.update()
 
     page.on_resize = on_resize
@@ -426,16 +430,28 @@ def main(page: ft.Page):
                 spacing=0,
             ),
         )
-
-    grid = ft.GridView(
-        ref=grid_ref,
-        expand=False,
-        max_extent=232,
-        child_aspect_ratio=0.72,
-        spacing=14,
-        run_spacing=14,
-        controls=[listing_card(a) for a in ANNONCES],
-    )
+    grid =  ft.ResponsiveRow(
+                breakpoints=breakpoints,
+                columns={
+                    "phone": 4,
+                    "tablet": 8,
+                    "desktop": 12,
+                },
+                spacing=10,
+                run_spacing=10,
+                controls=[
+                ft.Container(
+                    content=listing_card(a),
+                    alignment=ft.Alignment.CENTER,
+                    col={
+                        "phone": 4,     # 1 colonne
+                        "tablet": 4,    # 2 colonnes
+                        "desktop": 3,   # 4 colonnes
+                    },
+                )
+                for a in ANNONCES
+                ],
+            )
 
     section_title = ft.Row(
         [
