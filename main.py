@@ -227,9 +227,9 @@ def main(page: ft.Page):
                         [
                             logo,
                             ft.Container(expand=True),
-                            mobile_publish_btn,
                             mobile_favoris_btn,
                             mobile_profil_btn,
+                            mobile_publish_btn,
                         ],
                         alignment=ft.MainAxisAlignment.START,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
