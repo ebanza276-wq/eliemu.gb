@@ -179,42 +179,170 @@ def main(page: ft.Page):
         spacing=2,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
+    def build_header():
+        mobile = (page.width or 360) < 700
 
+        if mobile:
+            mobile_publish_btn = ft.Container(
+            content=ft.Icon(ft.Icons.ADD, color="white", size=18),
+            width=36,
+            height=36,
+            bgcolor=PRIMARY,
+            border_radius=10,
+            alignment=ft.Alignment.CENTER,
+            tooltip="Publier une annonce",
+            on_click=publish_btn.on_click,
+        )
+
+            mobile_favoris_btn = ft.Container(
+            content=ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=18),
+            width=36,
+            height=36,
+            bgcolor="transparent",
+            border=ft.Border.all(1, BORDER),
+            border_radius=10,
+            alignment=ft.Alignment.CENTER,
+            tooltip="Favoris",
+        )
+
+            mobile_profil_btn = ft.Container(
+            content=ft.CircleAvatar(
+                content=ft.Icon(ft.Icons.PERSON, color="white", size=15),
+                radius=17,
+                bgcolor=MUTED,
+            ),
+            border=ft.Border.all(1.5, PRIMARY),
+            border_radius=20,
+            padding=1,
+            tooltip="Marc Lucien",
+        )
+
+            return ft.Container(
+            bgcolor=CARD_BG,
+            padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
+            border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+            content=ft.Column(
+                [
+                    ft.Row(
+                        [
+                            logo,
+                            ft.Container(expand=True),
+                            mobile_publish_btn,
+                            mobile_favoris_btn,
+                            mobile_profil_btn,
+                        ],
+                        alignment=ft.MainAxisAlignment.START,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=8,
+                    ),
+                    ft.Container(
+                        margin=ft.Margin.only(top=14),
+                        content=ft.Row(
+                            [
+                                ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=13, color=MUTED),
+                                ft.Text("Kinshasa, RDC", size=11.5, color=MUTED, weight=ft.FontWeight.W_500),
+                            ],
+                            spacing=3,
+                        ),
+                    ),
+                    ft.Container(
+                        margin=ft.Margin.only(top=8),
+                        content=search_bar,
+                    ),
+                ],
+                spacing=0,
+            ),
+        )
+        desktop_favoris_btn = ft.Container(
+    content=ft.Row(
+        [
+            ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=17),
+            ft.Text("Favoris", size=12.5, color=INK, weight=ft.FontWeight.W_500),
+        ],
+        spacing=6,
+        tight=True,
+    ),
+    padding=ft.Padding.symmetric(horizontal=12, vertical=9),
+    border=ft.Border.all(1, BORDER),
+    border_radius=10,
+    tooltip="Vos annonces favorites",
+)
+
+        desktop_profil_btn = ft.Container(
+    content=ft.Row(
+        [
+            ft.Container(
+                content=ft.CircleAvatar(
+                    content=ft.Icon(ft.Icons.PERSON, color="white", size=14),
+                    radius=14,
+                    bgcolor=MUTED,
+                ),
+                border=ft.Border.all(1.5, PRIMARY),
+                border_radius=17,
+                padding=1,
+            ),
+            ft.Text("Marc Lucien", size=12.5, color=INK, weight=ft.FontWeight.W_500),
+        ],
+        spacing=8,
+        tight=True,
+    ),
+    padding=ft.Padding.symmetric(horizontal=10, vertical=6),
+    border_radius=10,
+    )
+
+        return ft.Container(
+    padding=ft.Padding.symmetric(horizontal=24, vertical=16),
+    bgcolor=CARD_BG,
+    border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+    alignment=ft.Alignment.CENTER,
+    content=ft.Container(
+        width=1160,
+        content=ft.Row(
+            [
+                logo,
+                ft.Container(width=32),
+                ft.Container(expand=True, content=search_bar),
+                ft.Container(width=8),
+                desktop_favoris_btn,
+                desktop_profil_btn,
+                publish_btn,
+            ],
+            alignment=ft.MainAxisAlignment.START,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10,
+        ),
+    ),
+)
+    # ... branche desktop inchangée
+    header = build_header()
     def on_resize(e):
-        wide = page.width and page.width >= 700
+        page.controls.clear()
 
-        titre.visible = wide
-        publish_btn.visible = page.width >= 700
-        #publish_btn.content.controls[1].visible = wide
+        header = build_header()
 
-    # Mise à jour du ratio des cartes
-        #grid.child_aspect_ratio = 0.25 if wide else 0.56
+        content_area = ft.Column(
+        expand=True,
+        spacing=0,
+        scroll=ft.ScrollMode.AUTO,
+        controls=[
+            header,
+            ft.Container(
+                alignment=ft.Alignment.TOP_CENTER,
+                padding=ft.Padding.symmetric(horizontal=20, vertical=18),
+                content=ft.Container(
+                    width=1100,
+                    content=long,
+                ),
+            ),
+        ],
+    )
+
+        page.add(content_area)
         page.update()
 
     page.on_resize = on_resize
     titre.visible = (page.width or 800) >= 700
     publish_btn.visible = (page.width or 800) >= 700
-    header = ft.Container(
-        padding=ft.Padding.symmetric(horizontal=20, vertical=14),
-        bgcolor=CARD_BG,
-        border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
-        alignment=ft.Alignment.CENTER,
-        content=ft.Container(
-            width=1100,
-            content=ft.Row(
-                [
-                    logo,
-                    ft.Container(expand=True, margin=ft.Margin.symmetric(horizontal=8), content=search_bar),
-                    favoris_btn,
-                    profil_btn,
-                    publish_btn,
-                ],
-                alignment=ft.MainAxisAlignment.START,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=14,
-            ),
-        ),
-    )
 
     # ---------------------------------------------------------------- HERO
     hero = ft.Container(
@@ -479,11 +607,18 @@ def main(page: ft.Page):
         query = (search_bar.value or "").strip().lower()
         cat = state["categorie"]
         filtered = [
-            a for a in ANNONCES
-            if (cat == "Tout" or a["categorie"] == cat)
-            and (query in a["title"].lower() or query in a["loc"].lower())
+        a for a in ANNONCES
+        if (cat == "Tout" or a["categorie"] == cat)
+        and (query in a["title"].lower() or query in a["loc"].lower())
         ]
-        grid.controls = [listing_card(a) for a in filtered]
+        grid.controls = [
+        ft.Container(
+            content=listing_card(a),
+            alignment=ft.Alignment.CENTER,
+            col={"phone": 4, "tablet": 4, "desktop": 3},
+        )
+        for a in filtered
+        ]
         empty_state.visible = len(filtered) == 0
         grid.visible = len(filtered) > 0
         section_title.controls[2].value = f"{len(filtered)} résultats"
