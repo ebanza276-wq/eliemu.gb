@@ -341,8 +341,8 @@ def main(page: ft.Page):
         page.update()
 
     page.on_resize = on_resize
-    titre.visible = (page.width or 800) >= 700
-    publish_btn.visible = (page.width or 800) >= 700
+    #titre.visible = (page.width or 800) >= 700
+    #publish_btn.visible = (page.width or 800) >= 700
 
     # ---------------------------------------------------------------- HERO
     hero = ft.Container(
