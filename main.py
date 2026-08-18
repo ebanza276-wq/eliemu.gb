@@ -15,6 +15,12 @@ INK = "#2B2320"             # texte principal (chaud, pas noir pur)
 MUTED = "#8A7F78"           # texte secondaire
 BORDER = "#EFE7E0"
 CHIP_BG = "#F3EEE9"
+SUCCESS = "#5A8F5B"
+DANGER = "#C0463A"
+
+COULEUR_PRIMAIRE = "#B5563A"      # rust/orange chaud (utilisé sur le formulaire de publication)
+COULEUR_PRIMAIRE_FONCE = "#8C4229"
+COULEUR_ACCENT = "#D98E4A"
 
 CATEGORIES = [
     ("Tout", ft.Icons.APPS),
@@ -109,13 +115,12 @@ def main(page: ft.Page):
         "Fraunces": "https://raw.githubusercontent.com/google/fonts/main/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
     }
     breakpoints = {
-            "phone": 0,
-            "tablet": 240,
-            "desktop": 800,
-        }
+        "phone": 0,
+        "tablet": 240,
+        "desktop": 800,
+    }
     state = {"query": "", "categorie": "Tout", "selected": None}
     favorites = set()
-    grid_ref = ft.Ref[ft.GridView]()
 
     # -------------------------------------------------------------- HEADER
     titre = ft.Text("AnnoncesApp", size=18, weight=ft.FontWeight.BOLD, color=INK)
@@ -150,6 +155,9 @@ def main(page: ft.Page):
         on_change=lambda e: filter_annonces(),
     )
 
+    def go_to_publier(e=None):
+        asyncio.create_task(page.push_route("/publier"))
+
     publish_btn = ft.ElevatedButton(
         content=ft.Row(
             [ft.Icon(ft.Icons.ADD, size=16, color="white"),
@@ -158,6 +166,7 @@ def main(page: ft.Page):
             tight=True,
         ),
         bgcolor=PRIMARY,
+        on_click=go_to_publier,
         style=ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=24),
             padding=ft.Padding.symmetric(horizontal=18, vertical=16),
@@ -165,184 +174,141 @@ def main(page: ft.Page):
         ),
     )
 
-    favoris_btn = ft.Column(
-        [ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=20), ft.Text("Favoris", size=11, color=INK)],
-        spacing=2,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-    )
-
-    profil_btn = ft.Column(
-        [
-            ft.CircleAvatar(content=ft.Icon(ft.Icons.PERSON, color="white", size=16), radius=13, bgcolor=MUTED),
-            ft.Text("Marc Lucien", size=11, color=INK),
-        ],
-        spacing=2,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-    )
     def build_header():
         mobile = (page.width or 360) < 700
 
         if mobile:
             mobile_publish_btn = ft.Container(
-            content=ft.Icon(ft.Icons.ADD, color="white", size=18),
-            width=36,
-            height=36,
-            bgcolor=PRIMARY,
-            border_radius=10,
-            alignment=ft.Alignment.CENTER,
-            tooltip="Publier une annonce",
-            on_click=publish_btn.on_click,
-        )
+                content=ft.Icon(ft.Icons.ADD, color="white", size=18),
+                width=36,
+                height=36,
+                bgcolor=PRIMARY,
+                border_radius=10,
+                alignment=ft.Alignment.CENTER,
+                tooltip="Publier une annonce",
+                on_click=go_to_publier,
+            )
 
             mobile_favoris_btn = ft.Container(
-            content=ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=18),
-            width=36,
-            height=36,
-            bgcolor="transparent",
-            border=ft.Border.all(1, BORDER),
-            border_radius=10,
-            alignment=ft.Alignment.CENTER,
-            tooltip="Favoris",
-        )
+                content=ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=18),
+                width=36,
+                height=36,
+                bgcolor="transparent",
+                border=ft.Border.all(1, BORDER),
+                border_radius=10,
+                alignment=ft.Alignment.CENTER,
+                tooltip="Favoris",
+            )
 
             mobile_profil_btn = ft.Container(
-            content=ft.CircleAvatar(
-                content=ft.Icon(ft.Icons.PERSON, color="white", size=15),
-                radius=17,
-                bgcolor=MUTED,
-            ),
-            border=ft.Border.all(1.5, PRIMARY),
-            border_radius=20,
-            padding=1,
-            tooltip="Marc Lucien",
-        )
-
-            return ft.Container(
-            bgcolor=CARD_BG,
-            padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
-            border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
-            content=ft.Column(
-                [
-                    ft.Row(
-                        [
-                            logo,
-                            ft.Container(expand=True),
-                            mobile_favoris_btn,
-                            mobile_profil_btn,
-                            mobile_publish_btn,
-                        ],
-                        alignment=ft.MainAxisAlignment.START,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        spacing=8,
-                    ),
-                    ft.Container(
-                        margin=ft.Margin.only(top=14),
-                        content=ft.Row(
-                            [
-                                ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=13, color=MUTED),
-                                ft.Text("Kinshasa, RDC", size=11.5, color=MUTED, weight=ft.FontWeight.W_500),
-                            ],
-                            spacing=3,
-                        ),
-                    ),
-                    ft.Container(
-                        margin=ft.Margin.only(top=8),
-                        content=search_bar,
-                    ),
-                ],
-                spacing=0,
-            ),
-        )
-        desktop_favoris_btn = ft.Container(
-    content=ft.Row(
-        [
-            ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=17),
-            ft.Text("Favoris", size=12.5, color=INK, weight=ft.FontWeight.W_500),
-        ],
-        spacing=6,
-        tight=True,
-    ),
-    padding=ft.Padding.symmetric(horizontal=12, vertical=9),
-    border=ft.Border.all(1, BORDER),
-    border_radius=10,
-    tooltip="Vos annonces favorites",
-)
-
-        desktop_profil_btn = ft.Container(
-    content=ft.Row(
-        [
-            ft.Container(
                 content=ft.CircleAvatar(
-                    content=ft.Icon(ft.Icons.PERSON, color="white", size=14),
-                    radius=14,
+                    content=ft.Icon(ft.Icons.PERSON, color="white", size=15),
+                    radius=17,
                     bgcolor=MUTED,
                 ),
                 border=ft.Border.all(1.5, PRIMARY),
-                border_radius=17,
+                border_radius=20,
                 padding=1,
+                tooltip="Marc Lucien",
+            )
+
+            return ft.Container(
+                bgcolor=CARD_BG,
+                padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
+                border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+                content=ft.Column(
+                    [
+                        ft.Row(
+                            [
+                                logo,
+                                ft.Container(expand=True),
+                                mobile_favoris_btn,
+                                mobile_profil_btn,
+                                mobile_publish_btn,
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            spacing=8,
+                        ),
+                        ft.Container(
+                            margin=ft.Margin.only(top=14),
+                            content=ft.Row(
+                                [
+                                    ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=13, color=MUTED),
+                                    ft.Text("Kinshasa, RDC", size=11.5, color=MUTED, weight=ft.FontWeight.W_500),
+                                ],
+                                spacing=3,
+                            ),
+                        ),
+                        ft.Container(
+                            margin=ft.Margin.only(top=8),
+                            content=search_bar,
+                        ),
+                    ],
+                    spacing=0,
+                ),
+            )
+
+        desktop_favoris_btn = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Icon(ft.Icons.FAVORITE_BORDER, color=INK, size=17),
+                    ft.Text("Favoris", size=12.5, color=INK, weight=ft.FontWeight.W_500),
+                ],
+                spacing=6,
+                tight=True,
             ),
-            ft.Text("Marc Lucien", size=12.5, color=INK, weight=ft.FontWeight.W_500),
-        ],
-        spacing=8,
-        tight=True,
-    ),
-    padding=ft.Padding.symmetric(horizontal=10, vertical=6),
-    border_radius=10,
-    )
+            padding=ft.Padding.symmetric(horizontal=12, vertical=9),
+            border=ft.Border.all(1, BORDER),
+            border_radius=10,
+            tooltip="Vos annonces favorites",
+        )
+
+        desktop_profil_btn = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Container(
+                        content=ft.CircleAvatar(
+                            content=ft.Icon(ft.Icons.PERSON, color="white", size=14),
+                            radius=14,
+                            bgcolor=MUTED,
+                        ),
+                        border=ft.Border.all(1.5, PRIMARY),
+                        border_radius=17,
+                        padding=1,
+                    ),
+                    ft.Text("Marc Lucien", size=12.5, color=INK, weight=ft.FontWeight.W_500),
+                ],
+                spacing=8,
+                tight=True,
+            ),
+            padding=ft.Padding.symmetric(horizontal=10, vertical=6),
+            border_radius=10,
+        )
 
         return ft.Container(
-    padding=ft.Padding.symmetric(horizontal=24, vertical=16),
-    bgcolor=CARD_BG,
-    border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
-    alignment=ft.Alignment.CENTER,
-    content=ft.Container(
-        width=1160,
-        content=ft.Row(
-            [
-                logo,
-                ft.Container(width=32),
-                ft.Container(expand=True, content=search_bar),
-                ft.Container(width=8),
-                desktop_favoris_btn,
-                desktop_profil_btn,
-                publish_btn,
-            ],
-            alignment=ft.MainAxisAlignment.START,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=10,
-        ),
-    ),
-)
-    # ... branche desktop inchangée
-    header = build_header()
-    def on_resize(e):
-        page.controls.clear()
-
-        header = build_header()
-
-        content_area = ft.Column(
-        expand=True,
-        spacing=0,
-        scroll=ft.ScrollMode.AUTO,
-        controls=[
-            header,
-            ft.Container(
-                alignment=ft.Alignment.TOP_CENTER,
-                padding=ft.Padding.symmetric(horizontal=20, vertical=18),
-                content=ft.Container(
-                    width=1100,
-                    content=long,
+            padding=ft.Padding.symmetric(horizontal=24, vertical=16),
+            bgcolor=CARD_BG,
+            border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+            alignment=ft.Alignment.CENTER,
+            content=ft.Container(
+                width=1160,
+                content=ft.Row(
+                    [
+                        logo,
+                        ft.Container(width=32),
+                        ft.Container(expand=True, content=search_bar),
+                        ft.Container(width=8),
+                        desktop_favoris_btn,
+                        desktop_profil_btn,
+                        publish_btn,
+                    ],
+                    alignment=ft.MainAxisAlignment.START,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=10,
                 ),
             ),
-        ],
-    )
-
-        page.add(content_area)
-        page.update()
-
-    page.on_resize = on_resize
-    #titre.visible = (page.width or 800) >= 700
-    #publish_btn.visible = (page.width or 800) >= 700
+        )
 
     # ---------------------------------------------------------------- HERO
     hero = ft.Container(
@@ -558,28 +524,21 @@ def main(page: ft.Page):
                 spacing=0,
             ),
         )
-    grid =  ft.ResponsiveRow(
-                breakpoints=breakpoints,
-                columns={
-                    "phone": 4,
-                    "tablet": 8,
-                    "desktop": 12,
-                },
-                spacing=10,
-                run_spacing=10,
-                controls=[
-                ft.Container(
-                    content=listing_card(a),
-                    alignment=ft.Alignment.CENTER,
-                    col={
-                        "phone": 4,     # 1 colonne
-                        "tablet": 4,    # 2 colonnes
-                        "desktop": 3,   # 4 colonnes
-                    },
-                )
-                for a in ANNONCES
-                ],
+
+    grid = ft.ResponsiveRow(
+        breakpoints=breakpoints,
+        columns={"phone": 4, "tablet": 8, "desktop": 12},
+        spacing=10,
+        run_spacing=10,
+        controls=[
+            ft.Container(
+                content=listing_card(a),
+                alignment=ft.Alignment.CENTER,
+                col={"phone": 4, "tablet": 4, "desktop": 3},
             )
+            for a in ANNONCES
+        ],
+    )
 
     section_title = ft.Row(
         [
@@ -607,43 +566,47 @@ def main(page: ft.Page):
         query = (search_bar.value or "").strip().lower()
         cat = state["categorie"]
         filtered = [
-        a for a in ANNONCES
-        if (cat == "Tout" or a["categorie"] == cat)
-        and (query in a["title"].lower() or query in a["loc"].lower())
+            a for a in ANNONCES
+            if (cat == "Tout" or a["categorie"] == cat)
+            and (query in a["title"].lower() or query in a["loc"].lower())
         ]
         grid.controls = [
-        ft.Container(
-            content=listing_card(a),
-            alignment=ft.Alignment.CENTER,
-            col={"phone": 4, "tablet": 4, "desktop": 3},
-        )
-        for a in filtered
+            ft.Container(
+                content=listing_card(a),
+                alignment=ft.Alignment.CENTER,
+                col={"phone": 4, "tablet": 4, "desktop": 3},
+            )
+            for a in filtered
         ]
         empty_state.visible = len(filtered) == 0
         grid.visible = len(filtered) > 0
         section_title.controls[2].value = f"{len(filtered)} résultats"
         page.update()
 
-    long = ft.Column(
+    long_column = ft.Column(
         expand=True,
         scroll=ft.ScrollMode.AUTO,
         spacing=18,
         controls=[hero, categorie_row, ad_banner, section_title, grid, empty_state],
     )
 
-    content_area = ft.Column(
-        expand=True,
-        spacing=0,
-        scroll=ft.ScrollMode.AUTO,
-        controls=[
-            header,
-            ft.Container(
-                alignment=ft.Alignment.TOP_CENTER,
-                padding=ft.Padding.symmetric(horizontal=20, vertical=18),
-                content=ft.Container(width=1100, content=long),
-            ),
-        ],
-    )
+    def build_home_view():
+        """Reconstruit la page d'accueil (header inclus) — appelée à chaque
+        route_change et à chaque resize, pour que le header bascule bien
+        entre les versions mobile / desktop."""
+        return ft.Column(
+            expand=True,
+            spacing=0,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                build_header(),
+                ft.Container(
+                    alignment=ft.Alignment.TOP_CENTER,
+                    padding=ft.Padding.symmetric(horizontal=20, vertical=18),
+                    content=ft.Container(width=1100, content=long_column),
+                ),
+            ],
+        )
 
     # --------------------------------------------------------- DETAIL VIEW
     def build_detail_view(annonce):
@@ -758,17 +721,262 @@ def main(page: ft.Page):
             expand=True,
         )
 
+    def section_titre(texte):
+        return ft.Text(texte, size=16, weight=ft.FontWeight.BOLD, color=INK)
+
+    def carte_conteneur(controls_list):
+        return ft.Container(
+            margin=ft.Margin.symmetric(horizontal=16, vertical=8),
+            padding=20,
+            border_radius=18,
+            bgcolor=CARD_BG,
+            border=ft.Border.all(1, BORDER),
+            shadow=ft.BoxShadow(blur_radius=10, color="#00000008", offset=ft.Offset(0, 2)),
+            content=ft.Column(spacing=14, controls=controls_list),
+        )
+
+    def champ_texte(label, hint=None, icon=None, **kwargs):
+        return ft.TextField(
+            label=label,
+            hint_text=hint,
+            prefix_icon=icon,
+            border_radius=12,
+            filled=True,
+            fill_color=CHIP_BG,
+            border_color="transparent",
+            focused_border_color=PRIMARY,
+            label_style=ft.TextStyle(color=MUTED),
+            color=INK,
+            **kwargs,
+        )
+
+    # --------------------------------------------------------- PUBLIER VIEW
+    def build_publier_view():
+        titre_champ = champ_texte("Titre de l'annonce", hint="Ex: iPhone 15 Pro Max 256 Go", icon=ft.Icons.TITLE)
+        prix_champ = champ_texte("Prix", icon=ft.Icons.EURO, keyboard_type=ft.KeyboardType.NUMBER)
+        description_champ = champ_texte(
+                    None, hint="Décrivez votre article en détail...",
+                    multiline=True, min_lines=6, max_lines=10,
+                )
+        async def handle_get_directory_path(e: ft.Event[ft.Button]):
+            files = await ft.FilePicker().pick_files(
+            allow_multiple=False,
+            allowed_extensions=["png", "jpg", "jpeg"]
+            )
+
+            if files:
+               selected_image.src = files[0].path
+               selected_image.visible = True
+               icone_ajout_photo.visible = False
+               page.update()
+        def build_info():
+            mobile = (page.width or 360) < 700
+            if mobile:
+                return ft.Container(
+                    bgcolor=CARD_BG,
+                    padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
+                    border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+                    content=ft.Column(
+                        [
+                            titre_champ,
+                            ft.Text(""),
+                            prix_champ,
+                        ],
+                        spacing=0,
+                    ),
+                )
+            return ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            titre_champ,
+                            ft.Text("Choisissez un titre court et précis. Ne mentionnez pas le prix !"),
+                        ]
+                    ),
+                    ft.Row(
+                        controls=[
+                            prix_champ,
+                            ft.Text("Indiquez le prix exact de l'article. Une annonce sans prix aura moins de vue."),
+                        ]
+                    ),
+                ]
+            )
+
+        info = build_info()
+        def build_description():
+            mobile = (page.width or 360) < 700
+            if mobile:
+                return ft.Container(
+                            bgcolor=CARD_BG,
+                            padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
+                            border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+                            content=ft.Column(
+                                [
+                                    description_champ,
+                                ],
+                                spacing=0,
+                            ),
+                        )
+            return ft.Column(
+                        controls=[
+                            ft.Row(
+                                controls=[
+                                    description_champ,
+                                    ft.Text("Donnez une description détaillée de votre article. N’indiquez pas vos coordonnées (e-mail, téléphones, …) \n dans la description. "),
+                                ]
+                            ),
+                        ]
+                    )
+        description = build_description()
+        categorie_champ = ft.Dropdown(
+            label="Catégorie",
+            border_radius=12,
+            filled=True,
+            fill_color=CHIP_BG,
+            border_color="transparent",
+            focused_border_color=PRIMARY,
+            label_style=ft.TextStyle(color=MUTED),
+            color=INK,
+            options=[
+                ft.dropdown.Option("Immobilier"),
+                ft.dropdown.Option("Véhicules"),
+                ft.dropdown.Option("Électronique"),
+                ft.dropdown.Option("Maison & Jardin"),
+                ft.dropdown.Option("Mode & Beauté"),
+            ],
+        )
+        ville_champ = champ_texte("Ville", icon=ft.Icons.LOCATION_ON_OUTLINED)
+        
+
+        erreur_texte = ft.Text("", color=DANGER, size=12.5, visible=False)
+
+        selected_image = ft.Image(src="", width=200, height=200, fit="cover",
+                                    border_radius=12, visible=False)
+        icone_ajout_photo = ft.Icon(ft.Icons.ADD_PHOTO_ALTERNATE_OUTLINED, size=48, color=COULEUR_PRIMAIRE)
+        image_path_state = {"src": None}
+
+        
+        public = ft.Column(
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+            spacing=0,
+            controls=[
+                ft.Container(
+                    padding=ft.Padding.only(top=20, left=20, right=20, bottom=6),
+                    content=ft.Column(
+                        [
+                            ft.Text("Publier une annonce", size=26, weight=ft.FontWeight.BOLD),
+                            ft.Text(
+                                "Remplissez les informations ci-dessous pour publier votre annonce.",
+                                size=13,
+                            ),
+                        ],
+                        spacing=4,
+                    ),
+                ),
+                carte_conteneur([
+                    ft.Container(
+                        border=ft.Border.all(2, ft.Colors.with_opacity(0.15, COULEUR_PRIMAIRE)),
+                        border_radius=14,
+                        padding=24,
+                        #on_click=choisir_image,
+                        content=ft.Column(
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            spacing=6,
+                            controls=[
+                                icone_ajout_photo,
+                                selected_image,
+                                ft.Container(height=6),
+                                ft.Button(
+                                    content="Choisir une photo",
+                                    icon=ft.Icons.FOLDER_OPEN,
+                                    on_click=handle_get_directory_path,
+                                ),
+                            ],
+                        ),
+                    ),
+                ]),
+                carte_conteneur([
+                    section_titre("Informations générales"),
+                    info,
+                    categorie_champ,
+                    ville_champ,
+                ]),
+                carte_conteneur([
+                    section_titre("Description"),
+                    description,
+                ]),
+                ft.Container(
+                    margin=ft.Margin.symmetric(horizontal=16, vertical=4),
+                    padding=16,
+                    border_radius=16,
+                    bgcolor=f"{GOLD}26",
+                    content=ft.Row(
+                        [
+                            ft.Icon(ft.Icons.LIGHTBULB_OUTLINE, color=GOLD),
+                            ft.Text(
+                                "Ajoutez une photo et une description détaillée pour vendre plus rapidement.",
+                                color=INK,
+                                expand=True,
+                                size=13,
+                            ),
+                        ]
+                    ),
+                ),
+                ft.Container(
+                    margin=ft.Margin.symmetric(horizontal=16, vertical=4),
+                    content=erreur_texte,
+                ),
+                ft.Container(
+                    margin=ft.Margin.symmetric(horizontal=16, vertical=8),
+                    content=ft.ElevatedButton(
+                        "Publier l'annonce",
+                        icon=ft.Icons.CHECK_CIRCLE_OUTLINE,
+                        style=ft.ButtonStyle(
+                            bgcolor=COULEUR_PRIMAIRE,
+                            color="white",
+                            shape=ft.RoundedRectangleBorder(radius=12),
+                        ),
+                        expand=True,
+                        height=52,
+                    ),
+                ),
+                ft.Container(height=20),
+            ],
+        )
+        return ft.Column(
+            expand=True,
+            spacing=0,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                ft.Container(
+                    alignment=ft.Alignment.TOP_CENTER,
+                    padding=ft.Padding.symmetric(horizontal=20, vertical=18),
+                    content=ft.Container(width=1100, content=public),
+                ),
+            ],
+        )
+    # ------------------------------------------------------------- ROUTING
     def route_change(e=None):
         page.views.clear()
-        page.views.append(ft.View(route="/", padding=0, controls=[content_area], bgcolor=PAPER))
+        page.views.append(ft.View(route="/", padding=0, controls=[build_home_view()], bgcolor=PAPER))
         if page.route == "/details":
             annonce = state["selected"] or ANNONCES[0]
             page.views.append(
                 ft.View(route="/details", padding=0, controls=[build_detail_view(annonce)], bgcolor=PAPER)
             )
+        if page.route == "/publier":
+            page.views.append(
+                ft.View(route="/publier", padding=0, controls=[build_publier_view()], bgcolor=PAPER)
+            )
+        page.update()
+
+    def on_resize(e):
+        # Un seul point d'entrée pour le resize : on redessine la vue
+        # actuelle (accueil, détail ou publication) selon la largeur.
+        route_change()
 
     page.on_route_change = route_change
+    page.on_resize = on_resize
     route_change()
-
-
 ft.app(target=main)
