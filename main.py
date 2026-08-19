@@ -758,17 +758,32 @@ def main(page: ft.Page):
                     None, hint="Décrivez votre article en détail...",
                     multiline=True, min_lines=6, max_lines=10,
                 )
+
+        # --- Zone photo : correctif ---
+        # On ne crée JAMAIS de ft.Image avec un src vide (Flet lève une
+        # erreur "Image must have src specified"). À la place, on garde
+        # une référence sur un Container dont le contenu ne devient une
+        # Image qu'une fois un fichier réellement sélectionné.
+        photo_zone_ref = ft.Ref[ft.Container]()
+        icone_ajout_photo = ft.Icon(ft.Icons.ADD_PHOTO_ALTERNATE_OUTLINED, size=48, color=COULEUR_PRIMAIRE)
+        photo_zone = ft.Container(ref=photo_zone_ref, content=icone_ajout_photo)
+
         async def handle_get_directory_path(e: ft.Event[ft.Button]):
             files = await ft.FilePicker().pick_files(
-            allow_multiple=False,
-            allowed_extensions=["png", "jpg", "jpeg"]
+                allow_multiple=False,
+                allowed_extensions=["png", "jpg", "jpeg"],
             )
 
             if files:
-               selected_image.src = files[0].path
-               selected_image.visible = True
-               icone_ajout_photo.visible = False
-               page.update()
+                photo_zone_ref.current.content = ft.Image(
+                    src=files[0].path,
+                    width=200,
+                    height=200,
+                    fit="cover",
+                    border_radius=12,
+                )
+                page.update()
+
         def build_info():
             mobile = (page.width or 360) < 700
             if mobile:
@@ -803,30 +818,32 @@ def main(page: ft.Page):
             )
 
         info = build_info()
+
         def build_description():
             mobile = (page.width or 360) < 700
             if mobile:
                 return ft.Container(
-                            bgcolor=CARD_BG,
-                            padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
-                            border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
-                            content=ft.Column(
-                                [
-                                    description_champ,
-                                ],
-                                spacing=0,
-                            ),
-                        )
+                    bgcolor=CARD_BG,
+                    padding=ft.Padding.only(left=18, right=18, top=16, bottom=14),
+                    border=ft.Border(bottom=ft.BorderSide(1, BORDER)),
+                    content=ft.Column(
+                        [
+                            description_champ,
+                        ],
+                        spacing=0,
+                    ),
+                )
             return ft.Column(
+                controls=[
+                    ft.Row(
                         controls=[
-                            ft.Row(
-                                controls=[
-                                    description_champ,
-                                    ft.Text("Donnez une description détaillée de votre article. N’indiquez pas vos coordonnées (e-mail, téléphones, …) \n dans la description. "),
-                                ]
-                            ),
+                            description_champ,
+                            ft.Text("Donnez une description détaillée de votre article. N'indiquez pas vos coordonnées (e-mail, téléphones, …) \n dans la description. "),
                         ]
-                    )
+                    ),
+                ]
+            )
+
         description = build_description()
         categorie_champ = ft.Dropdown(
             label="Catégorie",
@@ -846,16 +863,9 @@ def main(page: ft.Page):
             ],
         )
         ville_champ = champ_texte("Ville", icon=ft.Icons.LOCATION_ON_OUTLINED)
-        
 
         erreur_texte = ft.Text("", color=DANGER, size=12.5, visible=False)
 
-        selected_image = ft.Image(src="", width=200, height=200, fit="cover",
-                                    border_radius=12, visible=False)
-        icone_ajout_photo = ft.Icon(ft.Icons.ADD_PHOTO_ALTERNATE_OUTLINED, size=48, color=COULEUR_PRIMAIRE)
-        image_path_state = {"src": None}
-
-        
         public = ft.Column(
             scroll=ft.ScrollMode.AUTO,
             expand=True,
@@ -879,13 +889,11 @@ def main(page: ft.Page):
                         border=ft.Border.all(2, ft.Colors.with_opacity(0.15, COULEUR_PRIMAIRE)),
                         border_radius=14,
                         padding=24,
-                        #on_click=choisir_image,
                         content=ft.Column(
                             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                             spacing=6,
                             controls=[
-                                icone_ajout_photo,
-                                selected_image,
+                                photo_zone,
                                 ft.Container(height=6),
                                 ft.Button(
                                     content="Choisir une photo",
@@ -956,6 +964,7 @@ def main(page: ft.Page):
                 ),
             ],
         )
+
     # ------------------------------------------------------------- ROUTING
     def route_change(e=None):
         page.views.clear()
@@ -979,4 +988,6 @@ def main(page: ft.Page):
     page.on_route_change = route_change
     page.on_resize = on_resize
     route_change()
+
+
 ft.app(target=main)
