@@ -850,7 +850,7 @@ def main(page: ft.Page):
 
         erreur_texte = ft.Text("", color=DANGER, size=12.5, visible=False)
 
-        selected_image = ft.Image(src="", width=200, height=200, fit="cover",
+        selected_image = ft.Image(src="https://picsum.photos/seed/nike/400/300", width=200, height=200, fit="cover",
                                     border_radius=12, visible=False)
         icone_ajout_photo = ft.Icon(ft.Icons.ADD_PHOTO_ALTERNATE_OUTLINED, size=48, color=COULEUR_PRIMAIRE)
         image_path_state = {"src": None}
