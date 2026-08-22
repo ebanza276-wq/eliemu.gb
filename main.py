@@ -1,6 +1,5 @@
 import flet as ft
 
-
 def main(page: ft.Page):
     async def handle_pick_files(e: ft.Event[ft.Button]):
         files = await ft.FilePicker().pick_files(
