@@ -1,9 +1,6 @@
 import flet as ft
 import asyncio
 
-# ---------------------------------------------------------------------------
-# PALETTE (nettoyée — une seule source de vérité, plus de doublons)
-# ---------------------------------------------------------------------------
 PRIMARY = "#2954E5"       # bleu de marque (logo, CTA principal)
 PRIMARY_DARK = "#1E3FBF"
 RUST = "#E85D42"          # accent prix / favoris
