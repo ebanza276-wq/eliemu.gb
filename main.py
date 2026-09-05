@@ -1,6 +1,6 @@
 import flet as ft
 import asyncio
-
+import requests
 # ---------------------------------------------------------------------------
 # PALETTE (nettoyée — une seule source de vérité, plus de doublons)
 # ---------------------------------------------------------------------------
@@ -104,6 +104,7 @@ ANNONCES = [
     },
 ]
 
+api="192.12.14.1:3300"
 
 def main(page: ft.Page):
     page.title = "AnnoncesApp"
@@ -765,10 +766,23 @@ def main(page: ft.Page):
             )
 
             if files:
-               selected_image.src = files[0].path
-               selected_image.visible = True
-               icone_ajout_photo.visible = False
-               page.update()
+                chemin = files[0].path
+                try:
+                    with open(chemin, "rb") as f:
+                       r = requests.post(
+                       api,
+                      files={"image": f}
+                    )
+                    if r.status_code == 200:
+                       url_image = r.json()["url"]
+                       selected_image = url_image
+                       page.update()
+                except Exception as erreur:
+                    print("Eurreur")
+               #selected_image.src = files[0].path
+               #selected_image.visible = True
+               #icone_ajout_photo.visible = False
+                page.update()
         def build_info():
             mobile = (page.width or 360) < 700
             if mobile:
