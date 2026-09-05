@@ -775,7 +775,7 @@ def main(page: ft.Page):
                     )
                     if r.status_code == 200:
                        url_image = r.json()["url"]
-                       selected_image = url_image
+                       selected_image.src = url_image
                        page.update()
                 except Exception as erreur:
                     print("Eurreur")
