@@ -1,6 +1,7 @@
 import flet as ft
 import asyncio
 import requests
+import base64
 # ---------------------------------------------------------------------------
 # PALETTE (nettoyée — une seule source de vérité, plus de doublons)
 # ---------------------------------------------------------------------------
@@ -769,19 +770,32 @@ def main(page: ft.Page):
                 chemin = files[0].path
                 try:
                     with open(chemin, "rb") as f:
-                       r = requests.post(
-                       api,
-                      files={"image": f}
-                    )
+                        r = requests.post(
+                            api,
+                            files={"image": f}
+                        )
                     if r.status_code == 200:
-                       url_image = r.json()["url"]
-                       selected_image.src = url_image
-                       page.update()
+                        url_image = r.json()["image_url"]
+
+                        img = requests.get(url_image)
+
+                        selected_image.src_base64 = base64.b64encode(img.content).decode("utf-8")
+                        selected_image.visible = True
+                        icone_ajout_photo.visible = False
+                        #url_image = r.json()["image_url"]
+                        #image_b64 = base64.b64encode(url_image.content).decode("utf-8")
+                        #selected_image.src = image_b64
+                        #selected_image.visible = True
+                        #icone_ajout_photo.visible = False
+                        #image_path_state["src"] = url_image
+                    else:
+                        erreur_texte.value = f"Erreur serveur ({r.status_code}) lors de l'envoi de l'image."
+                        erreur_texte.visible = True
+                        print("Erreur upload:", r.status_code, r.text)
                 except Exception as erreur:
-                    print("Eurreur")
-               #selected_image.src = files[0].path
-               #selected_image.visible = True
-               #icone_ajout_photo.visible = False
+                    erreur_texte.value = "Impossible de contacter le serveur pour l'image."
+                    erreur_texte.visible = True
+                    print("Erreur upload:", erreur)
                 page.update()
         def build_info():
             mobile = (page.width or 360) < 700
