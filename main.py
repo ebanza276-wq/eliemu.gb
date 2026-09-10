@@ -104,7 +104,7 @@ ANNONCES = [
     },
 ]
 
-api="192.12.14.1:3300"
+api="serveur-production-541b.up.railway.app/upload"
 
 def main(page: ft.Page):
     page.title = "AnnoncesApp"
